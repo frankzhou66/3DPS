@@ -1,0 +1,331 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>3D打印服务智能报价系统 V1.1</title>
+<style>
+:root{--bg:#f4f6fa;--card:#fff;--ink:#182230;--muted:#687586;--line:#e5eaf0;--blue:#2563eb;--green:#15803d;--soft:#eff6ff}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.55 system-ui,-apple-system,"Segoe UI","Microsoft YaHei",sans-serif}
+.wrap{max-width:1050px;margin:28px auto;padding:0 16px 40px}.hero{background:linear-gradient(135deg,#102b55,#2563eb);color:#fff;border-radius:20px;padding:26px 28px;margin-bottom:18px}.hero h1{margin:0 0 5px;font-size:25px}.hero p{margin:0;color:#dbeafe}.tag{display:inline-block;border:1px solid #ffffff55;border-radius:20px;padding:3px 10px;font-size:12px;margin-top:14px}
+.layout{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(290px,.8fr);gap:18px;align-items:start}.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px;margin-bottom:16px;box-shadow:0 4px 16px #1c2d4610}.card h2{font-size:17px;margin:0 0 15px}.sub{font-size:12px;color:var(--muted);font-weight:400;margin-left:6px}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}.field label{display:block;color:#465365;font-size:13px;margin-bottom:6px}.field input,.field select{width:100%;border:1px solid #d6dee8;border-radius:9px;padding:10px 11px;font:inherit;background:#fff;color:var(--ink);outline:none}.field input:focus,.field select:focus{border-color:var(--blue);box-shadow:0 0 0 3px #2563eb18}
+.radio-list{display:grid;gap:9px}.radio{display:flex;gap:9px;align-items:flex-start;padding:10px 12px;border:1px solid var(--line);border-radius:10px;cursor:pointer}.radio:has(input:checked){border-color:#93b4f8;background:var(--soft)}input[type=radio]{accent-color:var(--blue);margin-top:4px}
+.hidden{display:none!important}.hint{font-size:12px;color:var(--muted);margin-top:9px}.summary{position:sticky;top:16px}.tabs{display:flex;background:#f0f3f8;padding:4px;border-radius:10px;margin-bottom:15px}.tabs button{flex:1;border:0;background:transparent;padding:9px;border-radius:8px;cursor:pointer;color:#566273;font-weight:600}.tabs button.active{background:#fff;color:var(--blue);box-shadow:0 1px 5px #172b4d18}
+.line{display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-bottom:1px solid #f0f2f5}.line span:first-child{color:var(--muted)}.total{font-size:27px;color:var(--green);font-weight:750;letter-spacing:-.5px}.total-label{font-size:12px;color:var(--muted)}.profit{font-size:21px;font-weight:700}.note{background:#f8fafc;border-radius:10px;padding:12px;font-size:12px;color:#596779;margin-top:12px}
+.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:15px}.save-status{font-size:12px;color:var(--muted);margin-top:9px}.save-status strong{color:var(--green)}.btn{border:0;border-radius:10px;padding:11px 15px;background:var(--blue);color:#fff;font-weight:650;cursor:pointer}.btn.secondary{background:#eef2f7;color:#344256}.btn:hover{filter:brightness(.97)}.section-foot{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:12px;color:var(--muted);font-size:12px}
+details{margin-top:13px}summary{cursor:pointer;color:#465365;font-weight:600}.small{font-size:12px;color:var(--muted)}.customer-only{display:none}.customer .customer-only{display:flex}.customer .internal-only{display:none}
+@media(max-width:780px){.layout{grid-template-columns:1fr}.summary{position:static}.wrap{margin:14px auto}.hero{padding:22px}.grid{gap:10px}}
+@media(max-width:420px){.grid{grid-template-columns:1fr}.card{padding:16px}.hero h1{font-size:21px}}
+@media print{body{background:#fff}.wrap{max-width:none;margin:0}.hero{background:#fff;color:#111;padding:0;border-radius:0}.hero p{color:#555}.tag,.form-area,.tabs,.actions,.hint,.note,.no-print{display:none!important}.layout{display:block}.card{box-shadow:none;border:0;padding:8px}.summary{position:static}.customer .internal-only{display:none!important}.customer .customer-only{display:flex!important}}
+</style>
+</head>
+<body>
+
+<div id="restoreDialog" class="hidden" style="position:fixed;inset:0;background:#10182899;z-index:9999;display:flex;align-items:center;justify-content:center;padding:18px">
+  <div style="background:#fff;border-radius:16px;max-width:430px;width:100%;padding:22px;box-shadow:0 18px 60px #0003">
+    <h2 style="margin:0 0 8px;font-size:19px">发现上次保存的报价</h2>
+    <p id="savedInfo" style="color:#687586;font-size:13px;line-height:1.6">是否恢复上次保存的数据？</p>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:18px">
+      <button class="btn" id="restoreBtn" type="button">恢复上次报价</button>
+      <button class="btn secondary" id="discardSavedBtn" type="button">放弃，重新开始</button>
+    </div>
+  </div>
+</div>
+
+<div class="wrap" id="app">
+  <header class="hero">
+    <h1>3D打印服务智能报价系统</h1>
+    <p>3D PRINTING SERVICE · QUOTATION & COST MANAGEMENT</p>
+    <span class="tag">网页计算器 V1.1 · 本地保存 · 人民币 CNY · 内部核算 + 客户报价</span>
+  </header>
+  <div class="layout">
+    <main class="form-area">
+      <section class="card">
+        <h2>01 · 订单基本信息</h2>
+        <div class="radio-list">
+          <label class="radio"><input type="radio" name="type" value="print" checked> <span><b>类型一：有模型，直接打印</b><br><span class="small">客户提供3D模型文件，直接进行打印生产</span></span></label>
+          <label class="radio"><input type="radio" name="type" value="model"> <span><b>类型二：有图纸，需要建模</b><br><span class="small">根据工程图、尺寸图或草图建立三维模型</span></span></label>
+          <label class="radio"><input type="radio" name="type" value="design"> <span><b>类型三：无模型无图纸，需要设计和建模</b><br><span class="small">包含产品概念设计及三维建模</span></span></label>
+        </div>
+        <div class="grid" style="margin-top:14px">
+          <div class="field"><label>打印数量（件）</label><input id="qty" type="number" min="1" step="1" value="1"></div>
+          <div class="field"><label>材料类型</label><select id="material"><option>PLA</option><option>PETG</option><option>ABS</option><option>ASA</option><option>TPU</option><option>尼龙 PA</option><option>光敏树脂</option><option>其他材料</option></select></div>
+        </div>
+      </section>
+
+      <section class="card" id="designCard">
+        <h2>02 · 设计及建模费用 <span class="sub">一次性费用 / 每订单</span></h2>
+        <div class="grid" id="designFields">
+          <div class="field" id="designHoursField"><label>产品设计工时（小时）</label><input id="designHours" type="number" min="0" step=".1" value="0"></div>
+          <div class="field" id="designRateField"><label>设计小时费（元）</label><input id="designRate" type="number" min="0" step=".01" value="80"></div>
+          <div class="field" id="modelHoursField"><label>建模工时（小时）</label><input id="modelHours" type="number" min="0" step=".1" value="0"></div>
+          <div class="field" id="modelRateField"><label>建模小时费（元）</label><input id="modelRate" type="number" min="0" step=".01" value="60"></div>
+          <div class="field"><label>文件检查及处理费（元/订单）</label><input id="fileFee" type="number" min="0" step=".01" value="0"></div>
+        </div>
+        <p class="hint">直接打印类型不收取设计建模费用；有图纸类型仅计算建模费；无模型无图纸类型计算设计费和建模费。</p>
+      </section>
+
+      <section class="card">
+        <h2>03 · 打印及耗材费用 <span class="sub">按单件数据计算</span></h2>
+        <div class="grid">
+          <div class="field"><label>单件耗材重量（克）</label><input id="grams" type="number" min="0" step=".1" value="100"></div>
+          <div class="field"><label>材料单价（元/公斤）</label><input id="priceKg" type="number" min="0" step=".01" value="80"></div>
+          <div class="field"><label>耗材损耗率（%）</label><input id="waste" type="number" min="0" step=".1" value="10"></div>
+          <div class="field"><label>单件打印时间（小时）</label><input id="hours" type="number" min="0" step=".1" value="3"></div>
+          <div class="field"><label>设备小时费率（元）</label><input id="machineRate" type="number" min="0" step=".01" value="8"></div>
+          <div class="field"><label>单件换色次数</label><input id="changes" type="number" min="0" step="1" value="0"></div>
+          <div class="field"><label>单次换色费（元）</label><input id="changeRate" type="number" min="0" step=".01" value="1.5"></div>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>04 · 后处理及质量检验 <span class="sub">按单件计算</span></h2>
+        <div class="grid">
+          <div class="field"><label>单件后处理工时（小时）</label><input id="postHours" type="number" min="0" step=".1" value="0"></div>
+          <div class="field"><label>人工小时费（元）</label><input id="laborRate" type="number" min="0" step=".01" value="40"></div>
+          <div class="field"><label>单件质检费（元）</label><input id="qc" type="number" min="0" step=".01" value="0"></div>
+          <div class="field"><label>单件包装费（元）</label><input id="pack" type="number" min="0" step=".01" value="5"></div>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>05 · 物流及其他费用 <span class="sub">按订单计算</span></h2>
+        <div class="grid">
+          <div class="field"><label>邮寄费用（元/订单）</label><input id="shipping" type="number" min="0" step=".01" value="12"></div>
+          <div class="field"><label>其他费用（元/订单）</label><input id="misc" type="number" min="0" step=".01" value="0"></div>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>06 · 利润、折扣及税费设置</h2>
+        <div class="grid">
+          <div class="field"><label>目标毛利率（%）</label><input id="margin" type="number" min="0" max="90" step=".1" value="35"></div>
+          <div class="field"><label>客户折扣（%）</label><input id="discount" type="number" min="0" max="100" step=".1" value="0"></div>
+          <div class="field"><label>税率（%）</label><input id="tax" type="number" min="0" step=".1" value="0"></div>
+        </div>
+        <p class="hint">目标毛利率按目标售价计算：目标售价 = 总成本 ÷（1 - 目标毛利率）。折扣在目标售价基础上扣除，税费按折后金额另计。税率请按实际适用情况设置。</p>
+      </section>
+    </main>
+
+    <aside class="summary">
+      <section class="card">
+        <h2>报价结果</h2>
+        <div class="tabs no-print">
+          <button id="internalTab" class="active" type="button">内部成本核算</button>
+          <button id="customerTab" type="button">客户报价视图</button>
+        </div>
+        <div id="internalView">
+          <div class="line"><span>设计及建模成本</span><b id="rDesign">¥0.00</b></div>
+          <div class="line"><span>文件处理成本</span><b id="rFile">¥0.00</b></div>
+          <div class="line"><span>耗材成本（含损耗）</span><b id="rMaterial">¥0.00</b></div>
+          <div class="line"><span>设备使用成本</span><b id="rMachine">¥0.00</b></div>
+          <div class="line"><span>多色换色成本</span><b id="rColor">¥0.00</b></div>
+          <div class="line"><span>后处理人工成本</span><b id="rPost">¥0.00</b></div>
+          <div class="line"><span>质检及包装成本</span><b id="rQcPack">¥0.00</b></div>
+          <div class="line"><span>邮寄及其他成本</span><b id="rShipMisc">¥0.00</b></div>
+          <div class="line" style="border:0;margin-top:7px"><b>订单总成本</b><b id="rCost">¥0.00</b></div>
+          <div class="line"><span>折后报价（含税）</span><b id="rFinalInternal">¥0.00</b></div>
+          <div class="line"><span>预计利润</span><b class="profit" id="rProfit">¥0.00</b></div>
+          <div class="line"><span>实际利润率</span><b id="rMargin">0.00%</b></div>
+          <div class="line"><span>平均单件成本</span><b id="rUnitCost">¥0.00</b></div>
+          <div class="note">内部视图显示成本及利润信息。正式报价时请切换到客户报价视图，避免将内部成本和利润透露给客户。</div>
+        </div>
+        <div id="customerView" class="hidden">
+          <div class="total-label">订单最终报价 · 人民币 CNY</div>
+          <div class="total" id="cTotal">¥0.00</div>
+          <div class="line"><span>设计建模服务</span><b id="cDesign">¥0.00</b></div>
+          <div class="line"><span>打印及生产服务</span><b id="cProduction">¥0.00</b></div>
+          <div class="line"><span>后处理及质检</span><b id="cPost">¥0.00</b></div>
+          <div class="line"><span>包装及物流</span><b id="cPackShip">¥0.00</b></div>
+          <div class="line"><span>其他服务</span><b id="cMisc">¥0.00</b></div>
+          <div class="line"><span>优惠金额</span><b id="cDiscount">-¥0.00</b></div>
+          <div class="line"><span>税费</span><b id="cTax">¥0.00</b></div>
+          <div class="line"><b>订单数量</b><b id="cQty">1 件</b></div>
+          <div class="line"><b>平均含税单价</b><b id="cUnit">¥0.00</b></div>
+          <p class="hint">客户视图不展示内部成本、利润及利润率。可使用浏览器打印功能另存为PDF。</p>
+        </div>
+        <div class="actions no-print">
+          <button class="btn" id="saveBtn" type="button">保存本次报价</button>
+          <button class="btn secondary" id="copyBtn" type="button">复制报价摘要</button>
+          <button class="btn secondary" id="printBtn" type="button">打印 / 导出PDF</button>
+          <button class="btn secondary" id="resetBtn" type="button">恢复默认</button>
+        </div>
+        <div class="save-status no-print" id="saveStatus">当前状态：<strong>尚未保存</strong>。保存内容仅存于此浏览器。</div>
+      </section>
+      <section class="card">
+        <h2>计算规则</h2>
+        <details open><summary>成本与报价公式</summary>
+          <p class="small">耗材费 = 重量 × 材料单价 ÷ 1000 ×（1 + 损耗率）</p>
+          <p class="small">设备费 = 打印小时数 × 设备小时费率</p>
+          <p class="small">换色费 = 换色次数 × 单次换色费</p>
+          <p class="small">后处理费 = 后处理工时 × 人工小时费</p>
+          <p class="small">总成本 = 一次性费用 + 单件生产成本 × 数量 + 订单物流及其他费用</p>
+          <p class="small">目标售价 = 总成本 ÷（1 - 目标毛利率）</p>
+          <p class="small">最终报价 =（目标售价 - 折扣金额）×（1 + 税率）</p>
+        </details>
+        <p class="hint">提示：建议将设备小时费率设为不重复包含的综合费率。若已包含电费、折旧或维护，请勿在其他项目中重复计入。</p>
+      </section>
+    </aside>
+  </div>
+  <footer class="small" style="text-align:center;padding:8px">3D打印服务智能报价系统 V1.1 · 本地浏览器运行 · 数据不会自动上传</footer>
+</div>
+<script>
+const $=id=>document.getElementById(id);
+const ids=['qty','material','designHours','designRate','modelHours','modelRate','fileFee','grams','priceKg','waste','hours','machineRate','changes','changeRate','postHours','laborRate','qc','pack','shipping','misc','margin','discount','tax'];
+const defaults={qty:1,material:'PLA',designHours:0,designRate:80,modelHours:0,modelRate:60,fileFee:0,grams:100,priceKg:80,waste:10,hours:3,machineRate:8,changes:0,changeRate:1.5,postHours:0,laborRate:40,qc:0,pack:5,shipping:12,misc:0,margin:35,discount:0,tax:0};
+let currentView='internal';
+const num=id=>Math.max(0,Number($(id).value)||0);
+const money=x=>'¥'+(Number.isFinite(x)?x:0).toFixed(2);
+const type=()=>document.querySelector('input[name="type"]:checked').value;
+function updateType(){
+ const t=type();
+ $('designCard').classList.toggle('hidden',t==='print');
+ $('designHoursField').classList.toggle('hidden',t!=='design');
+ $('designRateField').classList.toggle('hidden',t!=='design');
+}
+function calculate(){
+ updateType();
+ const q=Math.max(1,Math.floor(num('qty')));
+ const t=type();
+ const designCost=(t==='design'?num('designHours')*num('designRate'):0)+(t!=='print'?num('modelHours')*num('modelRate'):0);
+ const fileCost=t==='print'?0:num('fileFee');
+ const material=num('grams')*num('priceKg')/1000*(1+num('waste')/100);
+ const machine=num('hours')*num('machineRate');
+ const color=num('changes')*num('changeRate');
+ const post=num('postHours')*num('laborRate');
+ const qc=num('qc'),pack=num('pack'),ship=num('shipping'),misc=num('misc');
+ const production=material+machine+color+post+qc+pack;
+ const cost=designCost+fileCost+production*q+ship+misc;
+ const margin=Math.min(90,num('margin'))/100;
+ const gross=cost/(1-margin);
+ const discount=gross*Math.min(100,num('discount'))/100;
+ const afterDiscount=gross-discount;
+ const tax=afterDiscount*num('tax')/100;
+ const final=afterDiscount+tax;
+ const profit=final-cost;
+ const actual=final>0?profit/final*100:0;
+ const put=(id,val)=>$(id).textContent=val;
+ put('rDesign',money(designCost));put('rFile',money(fileCost));
+ put('rMaterial',money(material*q));put('rMachine',money(machine*q));
+ put('rColor',money(color*q));put('rPost',money(post*q));
+ put('rQcPack',money((qc+pack)*q));put('rShipMisc',money(ship+misc));
+ put('rCost',money(cost));put('rFinalInternal',money(final));put('rProfit',money(profit));
+ put('rMargin',actual.toFixed(2)+'%');put('rUnitCost',money(cost/q));
+ put('cTotal',money(final));put('cDesign',money(designCost+fileCost));
+ put('cProduction',money((material+machine+color)*q));
+ put('cPost',money((post+qc)*q));put('cPackShip',money(pack*q+ship));
+ put('cMisc',money(misc));put('cDiscount','-'+money(discount));
+ put('cTax',money(tax));put('cQty',q+' 件');put('cUnit',money(final/q));
+ window.quoteData={q,t,designCost,fileCost,material,machine,color,post,qc,pack,ship,misc,cost,gross,discount,tax,final,profit,actual};
+}
+function setView(v){
+ currentView=v;
+ $('internalView').classList.toggle('hidden',v!=='internal');
+ $('customerView').classList.toggle('hidden',v!=='customer');
+ $('internalTab').classList.toggle('active',v==='internal');
+ $('customerTab').classList.toggle('active',v==='customer');
+ $('app').classList.toggle('customer',v==='customer');
+}
+ids.forEach(id=>$(id).addEventListener('input',calculate));
+document.querySelectorAll('input[name="type"]').forEach(el=>el.addEventListener('change',calculate));
+$('internalTab').onclick=()=>setView('internal');
+$('customerTab').onclick=()=>setView('customer');
+$('resetBtn').onclick=()=>{
+ ids.forEach(id=>{if(defaults[id]!==undefined)$(id).value=defaults[id]});
+ document.querySelector('input[name="type"][value="print"]').checked=true;
+ calculate();setView('internal');
+};
+$('printBtn').onclick=()=>{if(currentView!=='customer'){setView('customer')}window.print()};
+$('copyBtn').onclick=async()=>{
+ const d=window.quoteData;
+ const title='3D打印服务报价摘要';
+ const text=[title,'业务类型：'+({print:'有模型直接打印',model:'有图纸需要建模',design:'无模型无图纸，需要设计和建模'}[d.t]),'材料：'+$('material').value,'数量：'+d.q+'件','订单总成本：'+money(d.cost),'客户最终报价：'+money(d.final),'平均单件报价：'+money(d.final/d.q)].join('\n');
+ try{await navigator.clipboard.writeText(text);$('copyBtn').textContent='已复制';setTimeout(()=>$('copyBtn').textContent='复制报价摘要',1600)}
+ catch(e){prompt('复制以下报价摘要：',text)}
+};
+
+const SAVE_KEY='3d_print_quote_v11_local_save';
+let isDirty=false;
+let hasSaved=false;
+let savedAt=null;
+function setSaveStatus(message, saved=false){
+  $('saveStatus').innerHTML='当前状态：<strong>'+message+'</strong>。保存内容仅存于此浏览器。';
+  $('saveStatus').style.color=saved?'#15803d':'#687586';
+}
+function markDirty(){
+  isDirty=true;
+  setSaveStatus('有未保存的修改');
+}
+function snapshot(){
+  const values={};
+  ids.forEach(id=>values[id]=$(id).value);
+  return {
+    version:1.1,
+    savedAt:new Date().toISOString(),
+    values,
+    type:type(),
+    view:currentView
+  };
+}
+function saveQuote(){
+  try{
+    const data=snapshot();
+    localStorage.setItem(SAVE_KEY,JSON.stringify(data));
+    isDirty=false;hasSaved=true;savedAt=data.savedAt;
+    setSaveStatus('已保存（'+new Date(data.savedAt).toLocaleString()+'）',true);
+    $('saveBtn').textContent='已保存';
+    setTimeout(()=>{$('saveBtn').textContent='保存本次报价'},1400);
+  }catch(e){
+    alert('保存失败：浏览器可能禁用了本地存储，或存储空间不足。请检查浏览器设置。');
+  }
+}
+function restoreQuote(data){
+  if(!data || !data.values) return;
+  ids.forEach(id=>{
+    if(data.values[id]!==undefined) $(id).value=data.values[id];
+  });
+  const radio=document.querySelector('input[name="type"][value="'+data.type+'"]');
+  if(radio) radio.checked=true;
+  calculate();
+  setView(data.view==='customer'?'customer':'internal');
+  isDirty=false;hasSaved=true;savedAt=data.savedAt;
+  setSaveStatus('已恢复上次保存（'+new Date(data.savedAt).toLocaleString()+'）',true);
+}
+ids.forEach(id=>$(id).addEventListener('input',markDirty));
+document.querySelectorAll('input[name="type"]').forEach(el=>el.addEventListener('change',markDirty));
+$('saveBtn').addEventListener('click',saveQuote);
+$('resetBtn').addEventListener('click',()=>{
+  // The existing reset handler above restores defaults; mark the reset as a new unsaved state.
+  setTimeout(markDirty,0);
+});
+window.addEventListener('beforeunload',e=>{
+  if(isDirty){
+    e.preventDefault();
+    e.returnValue='';
+  }
+});
+try{
+  const raw=localStorage.getItem(SAVE_KEY);
+  if(raw){
+    const data=JSON.parse(raw);
+    $('savedInfo').textContent='上次保存时间：'+new Date(data.savedAt).toLocaleString()+'。你可以恢复这份报价，或放弃并从默认数据开始。';
+    $('restoreDialog').classList.remove('hidden');
+    $('restoreBtn').onclick=()=>{
+      restoreQuote(data);
+      $('restoreDialog').classList.add('hidden');
+    };
+    $('discardSavedBtn').onclick=()=>{
+      localStorage.removeItem(SAVE_KEY);
+      $('restoreDialog').classList.add('hidden');
+      isDirty=false;hasSaved=false;
+      setSaveStatus('已放弃旧报价，可开始新报价');
+    };
+  }
+}catch(e){
+  setSaveStatus('无法读取本地保存记录');
+}
+calculate();
+</script>
+</body>
+</html>
